@@ -7,6 +7,7 @@ var token = 'MzA1NDUxOTY2ODIwMjUzNjk4.C91Z2g.-31utlOdV5RT2A79qEl5eYq2XLI';
 var version = '1.0.0';
 combot.login(token);
 combot.on('ready', function () {
+    Combat.setup();
     console.log('ComBot ' + version + ' ready for battle');
 });
 combot.on('message', function (message) {
@@ -15,58 +16,55 @@ combot.on('message', function (message) {
             Combat.handle(message);
     }
 });
+var Combatant = (function () {
+    function Combatant(user, name, dex, init) {
+        if (init === void 0) { init = null; }
+        this.init = null;
+        this.user = user;
+        this.name = name;
+        this.dex = parseInt(dex);
+        this.initMod = init ? parseInt(init) : Math.floor((this.dex - 10) / 2);
+    }
+    Combatant.prototype.rollInitiative = function () {
+        var roll = Math.ceil(Math.random() * 20);
+        this.init = { roll: roll, total: roll + this.initMod };
+    };
+    return Combatant;
+}());
+///<reference path="../main.ts" />
 var Combat;
 (function (Combat) {
     var ongoing = false;
     var hasStarted = false;
     var channel = null;
     var dmList = new Array();
+    var currentCombatant = null;
     var combatantList = new Array();
     var initList = new Array();
     var delayList = new Array();
-    var currentCombatant = null;
+    var fMap = new Map();
+    function setup() {
+        fMap.set('new', newCombat);
+        fMap.set('enter', enterCombat);
+        fMap.set('start', startCombat);
+        fMap.set('init', listInit);
+        fMap.set('end', endTurn);
+        fMap.set('delay', delayTurn);
+        fMap.set('act', actTurn);
+        fMap.set('finish', finishCombat);
+        fMap.set('ongoing', isOngoing);
+        fMap.set('list', listCombatants);
+        fMap.set('help', help);
+        fMap.set('info', info);
+    }
+    Combat.setup = setup;
     function handle(message) {
         var command = message.content.split(' ').slice(1);
-        switch (command[0].toLowerCase()) {
-            case 'new':
-                newCombat(message, command.slice(1));
-                break;
-            case 'enter':
-                enterCombat(message, command.slice(1));
-                break;
-            case 'start':
-                startCombat(message);
-                break;
-            case 'init':
-                listInit(message);
-                break;
-            case 'end':
-                endTurn(message);
-                break;
-            case 'delay':
-                delay(message);
-                break;
-            case 'act':
-                act(message);
-                break;
-            case 'finish':
-                finishCombat(message);
-                break;
-            case 'ongoing':
-                isOngoing(message);
-                break;
-            case 'list':
-                listCombatants(message);
-                break;
-            case 'help':
-                help(message);
-                break;
-            case 'info':
-                message.channel.sendMessage('ComBot ' + version + ' ready for battle!');
-                break;
-            default:
-                message.channel.sendMessage(message.content + ' - command failed');
-        }
+        var f = fMap.get(command[0].toLowerCase());
+        if (f)
+            f(message, command.slice(1));
+        else
+            message.channel.sendMessage(message.content + ' - command failed');
     }
     Combat.handle = handle;
     function newCombat(message, command) {
@@ -124,7 +122,7 @@ var Combat;
                 message.channel.sendMessage('Combat has already started. You cannot join.');
         }
     }
-    function startCombat(message) {
+    function startCombat(message, command) {
         if (!hasStarted) {
             hasStarted = true;
             initList = new Array();
@@ -138,14 +136,14 @@ var Combat;
                 initList.splice(i + 1, 0, c);
             }
             channel.sendMessage('Combat has begun!\n');
-            listInit(message);
+            listInit(message, command);
             startTurn();
         }
         else {
             message.channel.sendMessage('Combat has already started.');
         }
     }
-    function listInit(message) {
+    function listInit(message, command) {
         if (hasStarted) {
             var msg = 'Round Order:\n';
             if (currentCombatant) {
@@ -185,7 +183,7 @@ var Combat;
         msg += currentCombatant.user + ' ' + currentCombatant.name + '\'s turn!';
         channel.sendMessage(msg);
     }
-    function endTurn(message) {
+    function endTurn(message, command) {
         if (hasStarted) {
             if ((message.author === currentCombatant.user) || (dmList.indexOf(message.user) !== -1)) {
                 startTurn();
@@ -198,7 +196,7 @@ var Combat;
             message.channel.sendMessage('Combat has not started yet.');
         }
     }
-    function delay(message) {
+    function delayTurn(message, command) {
         if (hasStarted) {
             if ((message.author === currentCombatant.user) || (dmList.indexOf(message.user) !== -1)) {
                 delayList.push(currentCombatant);
@@ -212,7 +210,7 @@ var Combat;
             message.channel.sendMessage('Combat has not started yet.');
         }
     }
-    function act(message) {
+    function actTurn(message, command) {
         if (hasStarted) {
             var combatant = null;
             for (var _i = 0, delayList_2 = delayList; _i < delayList_2.length; _i++) {
@@ -238,7 +236,7 @@ var Combat;
             message.channel.sendMessage('Combat has not started yet.');
         }
     }
-    function finishCombat(message) {
+    function finishCombat(message, command) {
         if (ongoing) {
             if (dmList.indexOf(message.author) !== -1) {
                 if ((message.channel.type === 'dm') || (message.channel === channel)) {
@@ -262,7 +260,7 @@ var Combat;
             message.channel.sendMessage('There is no ongoing combat.');
         }
     }
-    function isOngoing(message) {
+    function isOngoing(message, command) {
         if (ongoing) {
             var msg = 'Current combat status: ';
             if (hasStarted) {
@@ -283,7 +281,7 @@ var Combat;
             message.channel.sendMessage('There is no ongoing combat.');
         }
     }
-    function listCombatants(message) {
+    function listCombatants(message, command) {
         if (ongoing) {
             var msg = '';
             if (combatantList.length > 0) {
@@ -303,7 +301,7 @@ var Combat;
             message.channel.sendMessage('There is no ongoing combat.');
         }
     }
-    function help(message) {
+    function help(message, command) {
         message.channel.sendMessage('**[PRE-COMBAT]**\n' +
             '**!combot new** - Start a new combat, if there is none ongoing\n' +
             '**!combot ongoing** - Check if there is any ongoing combats\n' +
@@ -314,25 +312,13 @@ var Combat;
             '\n**[COMBAT]**\n' +
             '**!combot end** - _[DM OR CURRENT PLAYER ONLY]_ Ends current combatant\'s turn\n' +
             '**!combot delay** - _[DM OR CURRENT PLAYER ONLY]_ Delay current combatant\'s turn\n' +
-            '**!combot act <charactername(optional)>** - Act a combatant\'s delayed turn. If no charactername is given, it will select the first delayed combatant owned by the sender\n' +
+            '**!combot act** - Act your combatant\'s delayed turn\n' +
             '**!combot finish** - Ends current combat\n' +
             '\n**[EXTRA]**\n' +
             '**!combot help** - Shows command list\n' +
             '**!combot info** - Check current bot version');
     }
-})(Combat || (Combat = {}));
-var Combatant = (function () {
-    function Combatant(user, name, dex, init) {
-        if (init === void 0) { init = null; }
-        this.init = null;
-        this.user = user;
-        this.name = name;
-        this.dex = parseInt(dex);
-        this.initMod = init ? parseInt(init) : Math.floor((this.dex - 10) / 2);
+    function info(message, command) {
+        message.channel.sendMessage('ComBot ' + version + ' ready for battle!');
     }
-    Combatant.prototype.rollInitiative = function () {
-        var roll = Math.ceil(Math.random() * 20);
-        this.init = { roll: roll, total: roll + this.initMod };
-    };
-    return Combatant;
-}());
+})(Combat || (Combat = {}));

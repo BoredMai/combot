@@ -1,55 +1,37 @@
+///<reference path="../main.ts" />
+
 namespace Combat {
-    let ongoing				: boolean = false;
-    let hasStarted      	: boolean = false;
-    let channel         	: TextChannel = null;
-    let dmList				: Array<User> = new Array<User>();
-    let currentCombatant	: Combatant = null;
-    let combatantList		: Array<Combatant> = new Array<Combatant>();
-    let initList			: Array<Combatant> = new Array<Combatant>();
-    let delayList			: Array<Combatant> = new Array<Combatant>();
+    let ongoing			 : boolean = false;
+    let hasStarted       : boolean = false;
+    let channel          : TextChannel = null;
+    let dmList			 : Array<User> = new Array<User>();
+    let currentCombatant : Combatant = null;
+    let combatantList	 : Array<Combatant> = new Array<Combatant>();
+    let initList		 : Array<Combatant> = new Array<Combatant>();
+    let delayList		 : Array<Combatant> = new Array<Combatant>();
+
+	let fMap			 : Map<string, Function> = new Map<string, Function>();
+
+	export function setup() {
+		 fMap.set('new', newCombat);
+		 fMap.set('enter', enterCombat);
+		 fMap.set('start', startCombat);
+		 fMap.set('init', listInit);
+		 fMap.set('end', endTurn);
+		 fMap.set('delay', delayTurn);
+		 fMap.set('act', actTurn);
+		 fMap.set('finish', finishCombat);
+		 fMap.set('ongoing', isOngoing);
+		 fMap.set('list', listCombatants);
+		 fMap.set('help', help);
+		 fMap.set('info', info);
+	}
 
     export function handle(message) {
         let command = message.content.split(' ').slice(1);
-        switch (command[0].toLowerCase()) {
-            case 'new':
-                newCombat(message, command.slice(1));
-                break;
-            case 'enter':
-                enterCombat(message, command.slice(1));
-                break;
-            case 'start':
-                startCombat(message);
-                break;
-            case 'init':
-                listInit(message);
-                break;
-            case 'end':
-                endTurn(message);
-                break;
-            case 'delay':
-                delay(message);
-                break;
-            case 'act':
-                act(message);
-                break;
-            case 'finish':
-                finishCombat(message);
-                break;
-            case 'ongoing':
-                isOngoing(message);
-                break;
-            case 'list':
-                listCombatants(message);
-                break;
-            case 'help':
-                help(message);
-                break;
-            case 'info':
-                message.channel.sendMessage('ComBot ' + version + ' ready for battle!');
-                break;
-            default:
-                message.channel.sendMessage(message.content + ' - command failed');
-        }
+		let f = fMap.get(command[0].toLowerCase());
+		if (f) f(message, command.slice(1));
+		else message.channel.sendMessage(message.content + ' - command failed');
     }
 
     function newCombat(message, command) {
@@ -103,7 +85,7 @@ namespace Combat {
         }
     }
 
-    function startCombat(message) {
+    function startCombat(message, command) {
 		if (!hasStarted) {
 			hasStarted = true;
 			initList = new Array<Combatant>();
@@ -116,14 +98,14 @@ namespace Combat {
 				initList.splice(i+1, 0, c);
 			}
 			channel.sendMessage('Combat has begun!\n');
-			listInit(message);
+			listInit(message, command);
 			startTurn();
 		} else {
 			message.channel.sendMessage('Combat has already started.');
 		}
     }
 
-	function listInit(message) {
+	function listInit(message, command) {
 		if (hasStarted) {
 			let msg = 'Round Order:\n';
 			if (currentCombatant) {
@@ -161,7 +143,7 @@ namespace Combat {
         channel.sendMessage(msg);
     }
 
-    function endTurn(message) {
+    function endTurn(message, command) {
 		if (hasStarted) {
 			if ((message.author === currentCombatant.user) || (dmList.indexOf(message.user) !== -1)) {
 				startTurn();
@@ -173,7 +155,7 @@ namespace Combat {
 		}
     }
 
-    function delay(message) {
+    function delayTurn(message, command) {
 		if (hasStarted) {
 			if ((message.author === currentCombatant.user) || (dmList.indexOf(message.user) !== -1)) {
 				delayList.push(currentCombatant);
@@ -186,7 +168,7 @@ namespace Combat {
 		}
     }
 
-	function act(message) {
+	function actTurn(message, command) {
 		if (hasStarted) {
 			let combatant = null;
 			for (let c of delayList) {
@@ -210,7 +192,7 @@ namespace Combat {
 		}
 	}
 
-    function finishCombat(message) {
+    function finishCombat(message, command) {
         if (ongoing) {
             if (dmList.indexOf(message.author) !== -1) {
                 if ((message.channel.type === 'dm') || (message.channel === channel)) {
@@ -232,7 +214,7 @@ namespace Combat {
         }
     }
 
-    function isOngoing(message) {
+    function isOngoing(message, command) {
         if (ongoing) {
             let msg = 'Current combat status: ';
             if (hasStarted) {
@@ -251,7 +233,7 @@ namespace Combat {
         }
     }
 
-    function listCombatants(message) {
+    function listCombatants(message, command) {
         if (ongoing) {
             let msg = '';
             if (combatantList.length > 0) {
@@ -269,7 +251,7 @@ namespace Combat {
         }
     }
 
-    function help(message) {
+    function help(message, command) {
         message.channel.sendMessage('**[PRE-COMBAT]**\n' +
                                     '**!combot new** - Start a new combat, if there is none ongoing\n' +
                                     '**!combot ongoing** - Check if there is any ongoing combats\n' +
@@ -286,4 +268,8 @@ namespace Combat {
 									'**!combot help** - Shows command list\n' +
                                     '**!combot info** - Check current bot version');
     }
+
+	function info(message, command) {
+		message.channel.sendMessage('ComBot ' + version + ' ready for battle!');
+	}
 }

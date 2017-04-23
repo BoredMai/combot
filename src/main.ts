@@ -9,6 +9,7 @@ const version = '1.0.0';
 combot.login(token);
 
 combot.on('ready', () => {
+  Combat.setup();
   console.log('ComBot ' + version + ' ready for battle');
 });
 
