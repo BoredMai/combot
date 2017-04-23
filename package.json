@@ -1,0 +1,32 @@
+{
+  "name": "combot",
+  "version": "1.0.0",
+  "description": "An initiative tracker for Discord",
+  "main": "combot.js",
+  "scripts": {
+    "test": "nodemon combot.js"
+  },
+  "keywords": [
+    "rpg",
+    "combat",
+    "combot",
+    "dnd",
+    "4e",
+    "5e",
+    "initiative",
+    "tracker"
+  ],
+  "author": "Maianne Ribeiro",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.0.0"
+  },
+  "devDependencies": {
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-nodemon": "^2.2.1",
+    "gulp-typescript": "^3.1.6",
+    "typescript": "^2.2.2"
+  }
+}
