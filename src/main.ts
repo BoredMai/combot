@@ -2,8 +2,8 @@
   An initiative tracker
 */
 const Discord = require('discord.js');
+const token = require('./token.js');
 const combot = new Discord.Client();
-const token = 'MzA1NDUxOTY2ODIwMjUzNjk4.C91Z2g.-31utlOdV5RT2A79qEl5eYq2XLI';
 const version = '1.0.0';
 
 combot.login(token);
