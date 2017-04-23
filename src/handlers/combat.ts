@@ -1,13 +1,12 @@
 namespace Combat {
-    let ongoing			: boolean = false;
-    let hasStarted      : boolean = false;
-    let channel         : TextChannel = null;
-    let dmList			: Array<User> = new Array<User>();
-    let combatantList	: Array<Combatant> = new Array<Combatant>();
-    let initList		: Array<Combatant> = new Array<Combatant>();
-    let delayList		: Array<Combatant> = new Array<Combatant>();
-
-    let currentCombatant: Combatant = null;
+    let ongoing				: boolean = false;
+    let hasStarted      	: boolean = false;
+    let channel         	: TextChannel = null;
+    let dmList				: Array<User> = new Array<User>();
+    let currentCombatant	: Combatant = null;
+    let combatantList		: Array<Combatant> = new Array<Combatant>();
+    let initList			: Array<Combatant> = new Array<Combatant>();
+    let delayList			: Array<Combatant> = new Array<Combatant>();
 
     export function handle(message) {
         let command = message.content.split(' ').slice(1);
@@ -281,7 +280,7 @@ namespace Combat {
 									'\n**[COMBAT]**\n' +
 									'**!combot end** - _[DM OR CURRENT PLAYER ONLY]_ Ends current combatant\'s turn\n' +
 									'**!combot delay** - _[DM OR CURRENT PLAYER ONLY]_ Delay current combatant\'s turn\n' +
-									'**!combot act <charactername(optional)>** - Act a combatant\'s delayed turn. If no charactername is given, it will select the first delayed combatant owned by the sender\n' +
+									'**!combot act** - Act your combatant\'s delayed turn\n' +
 									'**!combot finish** - Ends current combat\n' +
 									'\n**[EXTRA]**\n' +
 									'**!combot help** - Shows command list\n' +
